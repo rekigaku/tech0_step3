@@ -32,9 +32,9 @@ data = preprocess(data)
 
 
 # Streamlitアプリのヘッダー部分
-current_dir = os.getcwd()
-image_path = os.path.join(current_dir, 'title.png')
-st.image(image_path)
+#current_dir = os.getcwd()
+#image_path = os.path.join(current_dir, 'title.png')
+#st.image(image_path)
 
 st.markdown('#### あなたのTOKYO Lifeを見つけよう！')
 st.markdown("""
