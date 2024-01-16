@@ -1,11 +1,16 @@
 import streamlit as st
 import pandas as pd
 import sqlite3
+import os
+
+# データベースファイルへのパスを構築
+current_dir = os.getcwd()
+db_path = os.path.join(current_dir, 'suumo_urban2.db')
 
 # データ取得関数
 @st.cache_data
 def load_data():
-    conn = sqlite3.connect('suumo_urban.db')
+    conn = sqlite3.connect('suumo_urban2.db')
     data = pd.read_sql("SELECT * FROM suumo_urban2", conn)  
     conn.close()
     return data
