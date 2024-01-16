@@ -27,10 +27,9 @@ data = preprocess(data)
 
 
 # Streamlitアプリのヘッダー部分
-st.markdown('''
-    :rainbow: [Good Life＆Luck Scope]
-''')
-st.markdown('### TOKYO Lifeを見つけよう！')
+
+st.image('title.png')
+st.markdown('#### あなたのTOKYO Lifeを見つけよう！')
 st.markdown("""
     <h4 style='color: #FF4B4B;'>Discover your life!</h4>
     """, unsafe_allow_html=True)
@@ -198,7 +197,7 @@ st.write('物件の詳細情報はこちらです。')
 
 # 物件番号の入力
 property_number_input = st.number_input('物件番号を入力（「,」は必要なし）', min_value=int(data.index.min()), max_value=int(data.index.max()), step=1)
-st.caption("※　新しい情報を表示したい場合は、再度【物件を検索する】を押して下さい")
+st.caption("※新しい情報の表示⇒再度【物件を検索する】を押して下さい")
 
 # 物件情報の表示
 if property_number_input:
