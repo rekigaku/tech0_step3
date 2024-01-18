@@ -2,6 +2,9 @@ import streamlit as st
 import pandas as pd
 import sqlite3
 import os
+import requests
+import folium
+from streamlit_folium import folium_static
 
 # データベースファイルへのパスを構築
 current_dir = os.getcwd()
@@ -23,6 +26,30 @@ def preprocess(data):
     data['FlrNo'].fillna(1, inplace=True)
     return data
 
+# 国土地理院APIを使用して、住所から緯度経度を取得する関数
+def get_coordinate(place_name, prefecture=""):
+    url = "https://msearch.gsi.go.jp/address-search/AddressSearch"
+    params = {"q": place_name}
+    r = requests.get(url, params=params)
+    data = r.json()
+    if "error" in data:
+        print(data["error"])
+        return None, None
+    if not data:
+        return None, None
+    else:
+        for row in data:
+            if row["properties"]["title"].startswith(place_name):
+                coordinate = row["geometry"]["coordinates"]
+                title = row["properties"]["title"]
+                return coordinate, title
+        for row in data:
+            if row["properties"]["title"].startswith(prefecture):
+                coordinates = row["geometry"]["coordinates"]
+                title = row["properties"]["title"]
+                return coordinates, title
+        return None, None
+
 # データベースからデータをロード
 data = load_data()
 
@@ -39,19 +66,19 @@ data = preprocess(data)
 st.markdown("""
     <h4 style='color: #FF4B4B;'>DISCOVER YOUR TOKYO LIFE</h4>
     """, unsafe_allow_html=True)
-st.markdown('##### 2人の東京ライフ　検索サイト')
+st.markdown('##### 新婚カップルの賃貸検索サイト')
 
 # 説明文章
 st.caption("""
-    勤続年数に応じて給料が上がり続けた時代は、「家賃は月収の3分の1」といわれました。
- それはもはや都市伝説！！最初に無理して出費すると、その後の人生設計は大きく崩れます。
- 現実的にはどうなのか、新しい生活を始める2人にとっての適性価格を調べましょう。
+勤続年数に応じて給料が上がり続けた時代、「家賃は月収の3分の1」といわれましたが、もはや都市伝説！！　
+物価上昇が続く今の時代、新生活のスタートから無茶すると、その後の人生は大きく崩れます。
+ 新生活を始める2人のライフスタイルに合わせた、賃貸家賃の適性価格を調べましょう。
 """)
 
 st.write()  # 空行を挿入
 
 # ユーザー入力の受け取り
-your_income = st.number_input('あなたの年収(万円)', min_value=0)
+your_income = st.number_input('あなたの年収（万円）', min_value=0)
 partner_income = st.number_input('パートナーの年収（万円）', min_value=0)
 total_income = your_income + partner_income
 
@@ -63,12 +90,13 @@ st.markdown('<br>', unsafe_allow_html=True)  # 行間を空ける
 st.markdown("""
     <h5 style='color: #FF4B4B;'>アンケート</h5>
     """, unsafe_allow_html=True)
+
 # アンケートの質問
-st.caption('※必ず、二人一緒にお応え下さい。')
-dining_out = st.radio('月に4回以上は外食したい？', ['Yes', 'No'])
-shopping = st.radio('2人合わせて年間10着は服を買いたい？', ['Yes', 'No'])
-travel = st.radio('2泊以上の国内旅行、年に2回はしたい？', ['Yes', 'No'])
-sport = st.radio('スポーツジムや習い事は続けていきたい？', ['Yes', 'No'])
+st.caption('※必ず二人一緒の時に回答下さい。')
+dining_out = st.radio('月に最低4回は外食したい？', ['Yes', 'No'])
+shopping = st.radio('2人合わせて、年間10着は服を買いたい？', ['Yes', 'No'])
+travel = st.radio('2泊以上の国内旅行、年に3回は行きたい？', ['Yes', 'No'])
+sport = st.radio('スポーツジムや習い事は、続けていきたい？', ['Yes', 'No'])
 friend = st.radio('友だちとの交際費、夫婦合わせて月3万以上？', ['Yes', 'No'])
 
 # 賃貸の適性価格の計算
@@ -100,7 +128,7 @@ st.markdown('<br>', unsafe_allow_html=True)  # 空行を挿入
 
 # サイドバー設定
 st.sidebar.header('物件検索')
-st.sidebar.caption("アンケートに答えないと検索できません")
+st.sidebar.caption("アンケートに答えてから検索下さい")
 st.sidebar.text("")
 
 # 予算範囲の設定
@@ -264,11 +292,23 @@ if property_number_input:
         st.write(f"詳細URL: {property_data['DetailURL'].values[0]}")
 
 
+        # 地図の表示
+        address = property_data['Add'].values[0]  # ここで住所を取得
+        coordinates, title = get_coordinate(address)
+        if coordinates:
+            # foliumを使用して地図を作成
+            m = folium.Map(location=[coordinates[1], coordinates[0]], zoom_start=16)
+            folium.Marker([coordinates[1], coordinates[0]], popup=title).add_to(m)
+            folium_static(m)  # Streamlitで地図を表示
+        else:
+            st.error("地図上に物件を表示できませんでした。")
 
 
+  
 
 # フッター
 st.write('Copyright © Good life&lick Scope Co. All rights reserved.')
+
 
 
 
